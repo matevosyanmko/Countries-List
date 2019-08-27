@@ -1,48 +1,62 @@
-import React, { useEffect } from 'react';
-import './App.css';
-import { message, Button, Form, Input } from 'antd';
-import { connect } from 'react-redux';
-import { COUNTRIES } from './store/actiontypes';
+import React from 'react';
+//components
 import { ListTable } from './components/Table';
 import { Error } from './components/Error';
+// redux
+import { connect } from 'react-redux';
+import { COUNTRIES } from './store/actiontypes';
+import { API } from './store/endpoints';
+// assets
+import { Input } from 'antd';
 const { Search } = Input;
 
+const style = {
+  app: { width: "80%", margin: "auto", padding: "15px" },
+  filter: { display: 'flex', justifyContent: 'space-between', padding: "20px 10px", background: "#1B5E20" },
+  field: { width: 300 }
+}
+
 class App extends React.Component {
-  state = {
-    type: true,
-  };
+
   async componentDidMount() {
     const { dispatch } = this.props;
-    await dispatch({ type: COUNTRIES.FIND_COUNTRIES });
+    await dispatch({ type: COUNTRIES.FIND_COUNTRIES, api: API.All });
   }
+
   async searchByName(payload) {
     const { dispatch } = this.props;
-    payload.length
-      ? await dispatch({ type: COUNTRIES.FIND_COUNTRIES_BY_NAME, payload })
-      : await dispatch({ type: COUNTRIES.FIND_COUNTRIES });
+    payload.length ? await dispatch({ type: COUNTRIES.FIND_COUNTRIES_BY_NAME, payload, api: API.ByName }) : await dispatch({ type: COUNTRIES.FIND_COUNTRIES, api: API.All });
   }
+
+  async searchByAlpha(payload) {
+    const { dispatch } = this.props;
+    payload.length ? await dispatch({ type: COUNTRIES.FIND_COUNTRIES_BY_ALPHA, payload, api: API.ByCode }) : await dispatch({ type: COUNTRIES.FIND_COUNTRIES, api: API.All });
+  }
+
+  async searchByCapital(payload) {
+    const { dispatch } = this.props;
+    payload.length ? await dispatch({ type: COUNTRIES.FIND_COUNTRIES_BY_CAPITAL, payload, api: API.ByCapital }) : await dispatch({ type: COUNTRIES.FIND_COUNTRIES, api: API.All });
+  }
+
   render() {
     const { Countries } = this.props;
-    if (Countries.error) {
-      message.error(Countries.error);
-      return <Error info={Countries.error} />;
-    }
-    return (
-      <div className="App">
-        <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-          <Search placeholder="Search by name" onSearch={value => this.searchByName(value)} style={{ width: 200 }} />
-          <Search placeholder="Search by alphacode" onSearch={value => console.log(value)} style={{ width: 200 }} />
-          <Search placeholder="Search by capital" onSearch={value => this.searchByName(value)} style={{ width: 200 }} />
-        </div>
+    if (Countries.error) return <Error info={Countries.error} />;
 
-        <ListTable data={Countries.data} loading={!Countries.loaded} />
+    return (
+      <div style={style.app}>
+        <div style={style.filter}>
+          <Search placeholder="Search by name   Ex. Russia" onSearch={(value) => this.searchByName(value)} style={style.field} />
+          <Search placeholder="Search by alphacode  Ex. RU" onSearch={(value) => this.searchByAlpha(value)} style={style.field} />
+          <Search placeholder="Search by capital  Ex.` Moscow" onSearch={(value) => this.searchByCapital(value)} style={style.field} />
+        </div>
+        <ListTable data={Countries.data} loading={Countries.loaded} />
       </div>
     );
   }
 }
 
-const mapStateToProps = state => ({
-  Countries: state.Countries,
+const mapStateToProps = (state) => ({
+  Countries: state.Countries
 });
 
 export default connect(mapStateToProps)(App);
